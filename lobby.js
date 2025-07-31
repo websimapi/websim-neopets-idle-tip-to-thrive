@@ -11,6 +11,11 @@ class LobbyManager {
         if (!this.gameState.pet || this.isConnected) return;
 
         try {
+            // Wait for room to be initialized
+            if (!room.roomState) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+
             // Update presence with pet data
             await room.updatePresence({
                 pet: {
@@ -223,3 +228,5 @@ document.addEventListener('DOMContentLoaded', () => {
 // Export for use in other files
 window.lobbyManager = lobbyManager;
 
+// Make LobbyManager available globally
+window.LobbyManager = LobbyManager;

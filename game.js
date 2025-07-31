@@ -5,7 +5,12 @@ const room = new WebsimSocket();
 
 // Async initialization function
 async function initializeRoom() {
-    await room.initialize();
+    try {
+        await room.initialize();
+        console.log('Room initialized successfully');
+    } catch (error) {
+        console.error('Failed to initialize room:', error);
+    }
 }
 
 // Call the async initialization
@@ -240,8 +245,37 @@ function App() {
     const refresh = () => forceUpdate({});
 
     useEffect(() => {
-        // Initialize game
-        gameState.loadFromStorage();
+        // Initialize room and game
+        const initializeApp = async () => {
+            try {
+                await initializeRoom();
+                await gameState.loadFromStorage();
+                
+                // Subscribe to lobby pets
+                room.collection('pet').subscribe((pets) => {
+                    setLobbyPets(pets.slice(0, 10)); // Show top 10 recent pets
+                });
+
+                // Load comments
+                await loadComments();
+                
+                // Listen for new comments with tips
+                window.websim.addEventListener('comment:created', (data) => {
+                    const comment = data.comment;
+                    if (comment.card_data && comment.card_data.type === 'tip_comment') {
+                        gameState.applyTipBonus(comment.card_data.credits_spent);
+                        refresh();
+                    }
+                    loadComments();
+                });
+
+                refresh();
+            } catch (error) {
+                console.error('Failed to initialize app:', error);
+            }
+        };
+
+        initializeApp();
         
         // Update game state every 30 seconds
         const gameInterval = setInterval(() => {
@@ -252,24 +286,6 @@ function App() {
                 refresh();
             }
         }, 30000);
-
-        // Load comments
-        loadComments();
-        
-        // Listen for new comments with tips
-        window.websim.addEventListener('comment:created', (data) => {
-            const comment = data.comment;
-            if (comment.card_data && comment.card_data.type === 'tip_comment') {
-                gameState.applyTipBonus(comment.card_data.credits_spent);
-                refresh();
-            }
-            loadComments();
-        });
-
-        // Subscribe to lobby pets
-        room.collection('pet').subscribe((pets) => {
-            setLobbyPets(pets.slice(0, 10)); // Show top 10 recent pets
-        });
 
         return () => clearInterval(gameInterval);
     }, []);
