@@ -2,7 +2,14 @@ const { useState, useEffect, useRef } = React;
 
 // Initialize WebsimSocket for multiplayer and records
 const room = new WebsimSocket();
-await room.initialize();
+
+// Async initialization function
+async function initializeRoom() {
+    await room.initialize();
+}
+
+// Call the async initialization
+initializeRoom();
 
 // Game state management
 class GameState {
@@ -593,4 +600,3 @@ document.addEventListener('DOMContentLoaded', () => {
     setupPetCreation();
     ReactDOM.render(<App />, document.getElementById('app'));
 });
-
